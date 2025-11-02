@@ -66,9 +66,3 @@ pub struct DeviceDataPoint {
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
 }
-
-#[derive(Debug, Clone, Default)]
-pub struct DeviceDataParams {
-    pub end_date: Option<DateTime<Utc>>, // defaults to now per API
-    pub limit: Option<u32>,              // max data points
-}

@@ -4,8 +4,7 @@
 //! Socket.IO-based realtime client (feature: `realtime`).
 
 pub mod error;
-mod realtime;
-mod rest;
+pub mod realtime;
 mod types;
 
 pub use types::*;

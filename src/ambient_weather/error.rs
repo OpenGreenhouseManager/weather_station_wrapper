@@ -4,8 +4,6 @@ pub(crate) type Result<T> = core::result::Result<T, Error>;
 pub(crate) enum Error {
     EmitError(String),
     ConnectError(String),
-    Request(reqwest::Error),
-    Url(url::ParseError),
 }
 
 // region:    --- Error Boilerplate

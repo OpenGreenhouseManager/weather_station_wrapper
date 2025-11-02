@@ -6,7 +6,7 @@ use std::{
     time::Duration,
 };
 
-use ambient_weather::error::Result;
+use ambient_weather::error::{Error, Result};
 use ambient_weather::{RealtimeClient, RealtimeEvent};
 
 use crate::ambient_weather::DeviceDataPoint;
@@ -85,7 +85,16 @@ async fn main() {
     let application_key = config.additional_config.application_key;
     let api_key = config.additional_config.api_key;
     thread::spawn(move || {
-        init_api_scrape(application_key, api_key).unwrap();
+        if let Err(e) = init_api_scrape(application_key, api_key) {
+            match e {
+                Error::EmitError(e) => {
+                    println!("error emitting: {e}");
+                }
+                Error::ConnectError(e) => {
+                    println!("error connecting: {e}");
+                }
+            }
+        }
     });
 
     let device_service = DeviceBuilder::new_output_device_with_config_path(
@@ -147,15 +156,6 @@ async fn config_interceptor_handler(
         },
         scripting_api: old_config.scripting_api.clone(),
     }
-}
-
-fn cencor_qpi_key(key: String) -> String {
-    if key.len() < 4 {
-        return key;
-    }
-    key.chars().take(4).collect::<String>()
-        + "..."
-        + key.chars().rev().take(4).collect::<String>().as_str()
 }
 
 fn init_api_scrape(application_key: String, api_key: String) -> Result<()> {

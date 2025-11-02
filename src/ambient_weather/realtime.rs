@@ -4,7 +4,7 @@ use rust_socketio::client::Client;
 use rust_socketio::{ClientBuilder, Payload};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::mpsc::{self, Receiver};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -25,7 +25,6 @@ pub enum RealtimeEvent {
 }
 
 pub struct RealtimeClient {
-    sender: Sender<RealtimeEvent>,
 }
 
 impl RealtimeClient {
@@ -125,11 +124,11 @@ impl RealtimeClient {
         Ok(())
     }
 
-    pub fn unsubscribe(client: &Client, api_keys: &[String]) -> Result<()> {
-        let body = json!({ "apiKeys": api_keys });
-        client
-            .emit("unsubscribe", body)
-            .map_err(|e| Error::EmitError(e.to_string()))?;
-        Ok(())
-    }
+    // pub fn unsubscribe(client: &Client, api_keys: &[String]) -> Result<()> {
+    //     let body = json!({ "apiKeys": api_keys });
+    //     client
+    //         .emit("unsubscribe", body)
+    //         .map_err(|e| Error::EmitError(e.to_string()))?;
+    //     Ok(())
+    // }
 }

@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  weather-station-wrapper:
+    # Use the published image; or uncomment build to build locally
+    image: ghcr.io/OWNER/weather_station_wrapper:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    container_name: weather-station-wrapper
+    restart: unless-stopped
+    ports:
+      - "6001:6001"
+    environment:
+      - RUST_LOG=info
+    volumes:
+      - ./config:/config:ro
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    # user is already non-root in the image; uncomment to force host mapping
+    # user: "10001:10001"
+    # healthcheck:
+    #   test: ["CMD", "wget", "-qO-", "http://localhost:6001/health"]
+    #   interval: 30s
+    #   timeout: 5s
+    #   retries: 3
+

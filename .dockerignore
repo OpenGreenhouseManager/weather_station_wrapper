@@ -1,0 +1,22 @@
+# Build artifacts
+target/
+
+# VCS
+.git/
+.gitignore
+
+# CI config (not needed in build context)
+.github/
+
+# Local dev files
+*.swp
+*.log
+.DS_Store
+
+# Docker/Compose files (not needed in context)
+docker-compose.yml
+docker-compose.yaml
+
+# Config (mount at runtime to avoid baking secrets)
+config/
+

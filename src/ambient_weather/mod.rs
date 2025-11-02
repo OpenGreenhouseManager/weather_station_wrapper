@@ -8,7 +8,6 @@ mod realtime;
 mod rest;
 mod types;
 
-pub use rest::AmbientWeatherClient;
 pub use types::*;
 
 pub use realtime::{RealtimeClient, RealtimeEvent};

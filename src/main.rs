@@ -119,7 +119,7 @@ async fn read_handler(_: Arc<Config<WeatherStationConfig>>) -> Type {
                 .collect(),
         );
     }
-    return Type::Object(HashMap::new());
+    Type::Object(HashMap::new())
 }
 
 async fn status_handler(config: Arc<Config<WeatherStationConfig>>) -> DeviceStatusResponseDto {
@@ -153,9 +153,9 @@ fn cencor_qpi_key(key: String) -> String {
     if key.len() < 4 {
         return key;
     }
-    return key.chars().take(4).collect::<String>()
+    key.chars().take(4).collect::<String>()
         + "..."
-        + key.chars().rev().take(4).collect::<String>().as_str();
+        + key.chars().rev().take(4).collect::<String>().as_str()
 }
 
 fn init_api_scrape(application_key: String, api_key: String) -> Result<()> {

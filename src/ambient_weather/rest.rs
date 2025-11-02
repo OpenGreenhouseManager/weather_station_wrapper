@@ -18,8 +18,8 @@ impl AmbientWeatherClient {
         let http = reqwest::Client::builder()
             .user_agent("ambient_weather-rs/0.1")
             .build()
-            .map_err(|e| Error::Request(e))?;
-        let base_url = Url::parse(DEFAULT_BASE_URL).map_err(|e| Error::Url(e))?;
+            .map_err(Error::Request)?;
+        let base_url = Url::parse(DEFAULT_BASE_URL).map_err(Error::Url)?;
         Ok(Self {
             application_key: application_key.into(),
             api_key: api_key.into(),
@@ -36,8 +36,8 @@ impl AmbientWeatherClient {
         let http = reqwest::Client::builder()
             .user_agent("ambient_weather-rs/0.1")
             .build()
-            .map_err(|e| Error::Request(e))?;
-        let base_url = Url::parse(base_url).map_err(|e| Error::Url(e))?;
+            .map_err(Error::Request)?;
+        let base_url = Url::parse(base_url).map_err(Error::Url)?;
         Ok(Self {
             application_key: application_key.into(),
             api_key: api_key.into(),
@@ -47,19 +47,14 @@ impl AmbientWeatherClient {
     }
 
     pub async fn list_devices(&self) -> Result<Vec<Device>> {
-        let mut url = self.base_url.join("devices").map_err(|e| Error::Url(e))?;
+        let mut url = self.base_url.join("devices").map_err(Error::Url)?;
         url.query_pairs_mut()
             .append_pair("applicationKey", &self.application_key)
             .append_pair("apiKey", &self.api_key);
 
-        let response = self
-            .http
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| Error::Request(e))?;
-        let response = response.error_for_status().map_err(|e| Error::Request(e))?;
-        let devices: Vec<Device> = response.json().await.map_err(|e| Error::Request(e))?;
+        let response = self.http.get(url).send().await.map_err(Error::Request)?;
+        let response = response.error_for_status().map_err(Error::Request)?;
+        let devices: Vec<Device> = response.json().await.map_err(Error::Request)?;
         Ok(devices)
     }
 
@@ -71,7 +66,7 @@ impl AmbientWeatherClient {
         let mut url = self
             .base_url
             .join(&format!("devices/{device_mac_or_id}"))
-            .map_err(|e| Error::Url(e))?;
+            .map_err(Error::Url)?;
         {
             let mut qp = url.query_pairs_mut();
             qp.append_pair("applicationKey", &self.application_key)
@@ -84,15 +79,10 @@ impl AmbientWeatherClient {
             }
         }
 
-        let response = self
-            .http
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| Error::Request(e))?;
-        let response = response.error_for_status().map_err(|e| Error::Request(e))?;
+        let response = self.http.get(url).send().await.map_err(Error::Request)?;
+        let response = response.error_for_status().map_err(Error::Request)?;
         // API returns an array of datapoints
-        let points: Vec<DeviceDataPoint> = response.json().await.map_err(|e| Error::Request(e))?;
+        let points: Vec<DeviceDataPoint> = response.json().await.map_err(Error::Request)?;
         Ok(points)
     }
 }

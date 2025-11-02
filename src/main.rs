@@ -179,7 +179,7 @@ fn init_api_scrape(application_key: String, api_key: String) -> Result<()> {
                 *new_data = Some(dp);
             }
             RealtimeEvent::Connected => {
-                match RealtimeClient::subscribe(&socket, &[api_key.clone()]) {
+                match RealtimeClient::subscribe(&socket, std::slice::from_ref(&api_key)) {
                     Ok(_) => {
                         println!("subscribed");
                     }

@@ -24,8 +24,7 @@ pub enum RealtimeEvent {
     Connected,
 }
 
-pub struct RealtimeClient {
-}
+pub struct RealtimeClient {}
 
 impl RealtimeClient {
     pub fn connect_with_base(

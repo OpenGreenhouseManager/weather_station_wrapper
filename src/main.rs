@@ -35,6 +35,7 @@ const DATASOURCE_ID: &str = "7a224a14-6e07-45a3-91da-b7584a5731c1";
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 struct WeatherStationConfig {
+    pub base_url: String,
     pub application_key: String,
     pub api_key: String,
 }
@@ -57,6 +58,7 @@ async fn main() {
                 input_type: Some(TypeOptionDto::Number),
                 output_type: Some(TypeOptionDto::Number),
                 additional_config: WeatherStationConfig {
+                    base_url: "http://localhost:8080/".to_string(),
                     application_key: "".to_string(),
                     api_key: "".to_string(),
                 },
@@ -82,10 +84,12 @@ async fn main() {
         }
     };
 
+    let base_url = config.additional_config.base_url;
     let application_key = config.additional_config.application_key;
     let api_key = config.additional_config.api_key;
+    
     thread::spawn(move || {
-        if let Err(e) = init_api_scrape(application_key, api_key) {
+        if let Err(e) = init_api_scrape(base_url, application_key, api_key) {
             match e {
                 Error::EmitError(e) => {
                     println!("error emitting: {e}");
@@ -150,6 +154,7 @@ async fn config_interceptor_handler(
         output_type: old_config.output_type,
         additional_config: {
             WeatherStationConfig {
+                base_url: config.additional_config.base_url,
                 application_key: config.additional_config.application_key,
                 api_key: config.additional_config.api_key,
             }
@@ -158,9 +163,9 @@ async fn config_interceptor_handler(
     }
 }
 
-fn init_api_scrape(application_key: String, api_key: String) -> Result<()> {
+fn init_api_scrape(base_url: String, application_key: String, api_key: String) -> Result<()> {
     let (socket, rx) =
-        RealtimeClient::connect_with_base("http://localhost:8080/", &application_key)?;
+        RealtimeClient::connect_with_base(&base_url, &application_key)?;
     sleep(Duration::from_secs(3));
 
     for event in rx {

@@ -14,8 +14,6 @@ pub struct SubscribedEventBody {
     pub devices: Vec<Device>,
     #[serde(default)]
     pub invalid_api_keys: Vec<String>,
-    #[serde(default)]
-    pub method: Option<String>,
 }
 
 #[derive(Debug, Clone)]

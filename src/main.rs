@@ -94,9 +94,6 @@ async fn main() {
                 Error::EmitError(e) => {
                     println!("error emitting: {e}");
                 }
-                Error::ConnectError(e) => {
-                    println!("error connecting: {e}");
-                }
             }
         }
     });

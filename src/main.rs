@@ -13,6 +13,8 @@ use crate::ambient_weather::DeviceDataPoint;
 
 static NEWEST_DATA_MUTEX: LazyLock<RwLock<Option<DeviceDataPoint>>> =
     LazyLock::new(|| RwLock::new(None));
+static CONNECTION_STATUS: LazyLock<RwLock<DeviceStatusDto>> =
+    LazyLock::new(|| RwLock::new(DeviceStatusDto::Panic));
 use std::sync::Arc;
 
 use greenhouse_core::{
@@ -94,6 +96,9 @@ async fn main() {
                 Error::EmitError(e) => {
                     println!("error emitting: {e}");
                 }
+                Error::ConnectError(e) => {
+                    println!("error connecting: {e}");
+                }
             }
         }
     });
@@ -126,7 +131,13 @@ async fn read_handler(_: Arc<Config<WeatherStationConfig>>) -> Type {
 
 async fn status_handler(config: Arc<Config<WeatherStationConfig>>) -> DeviceStatusResponseDto {
     DeviceStatusResponseDto {
-        status: DeviceStatusDto::Online,
+        status: {
+            let guard = CONNECTION_STATUS.read().unwrap();
+            match *guard {
+                DeviceStatusDto::Online => DeviceStatusDto::Online,
+                DeviceStatusDto::Panic => DeviceStatusDto::Panic,
+            }
+        },
         datasource_id: config.datasource_id.clone(),
     }
 }
@@ -153,36 +164,72 @@ async fn config_interceptor_handler(
 }
 
 fn init_api_scrape(base_url: String, application_key: String, api_key: String) -> Result<()> {
-    let (socket, rx) = RealtimeClient::connect_with_base(&base_url, &application_key)?;
-    sleep(Duration::from_secs(3));
+    // Exponential backoff reconnect loop
+    let mut backoff_secs: u64 = 1;
+    let max_backoff_secs: u64 = 30;
+    loop {
+        {
+            let mut status = CONNECTION_STATUS.write().unwrap();
+            *status = DeviceStatusDto::Panic;
+        }
 
-    for event in rx {
-        match event {
-            RealtimeEvent::Subscribed(body) => {
-                println!(
-                    "Subscribed: {} devices, invalid: {:?}",
-                    body.device_count, body.invalid_api_keys
-                );
-            }
-            RealtimeEvent::Data(dp) => {
-                //println!("Data: {:?}", dp);
-                println!("data received {dp:?}");
-                let mut new_data = NEWEST_DATA_MUTEX.write().unwrap();
-                *new_data = Some(dp);
+        match RealtimeClient::connect_with_base(&base_url, &application_key) {
+            Ok((socket, rx)) => {
+                // Connected to transport; wait a bit, then process events
+                backoff_secs = 1;
+                sleep(Duration::from_secs(1));
 
-                println!("new data: {new_data:?}");
-            }
-            RealtimeEvent::Connected => {
-                match RealtimeClient::subscribe(&socket, std::slice::from_ref(&api_key)) {
-                    Ok(_) => {
-                        println!("subscribed");
-                    }
-                    Err(e) => {
-                        println!("error subscribing: {e}");
+                for event in rx {
+                    match event {
+                        RealtimeEvent::Subscribed(body) => {
+                            println!(
+                                "Subscribed: {} devices, invalid: {:?}",
+                                body.device_count, body.invalid_api_keys
+                            );
+                            let mut status = CONNECTION_STATUS.write().unwrap();
+                            *status = DeviceStatusDto::Online;
+                        }
+                        RealtimeEvent::Data(dp) => {
+                            println!("data received {dp:?}");
+                            let mut new_data = NEWEST_DATA_MUTEX.write().unwrap();
+                            *new_data = Some(dp);
+                        }
+                        RealtimeEvent::Connected => {
+                            {
+                                let mut status = CONNECTION_STATUS.write().unwrap();
+                                *status = DeviceStatusDto::Online;
+                            }
+                            match RealtimeClient::subscribe(&socket, std::slice::from_ref(&api_key))
+                            {
+                                Ok(_) => {
+                                    println!("subscribed");
+                                }
+                                Err(e) => {
+                                    println!("error subscribing: {e}");
+                                }
+                            }
+                        }
+                        RealtimeEvent::Disconnected => {
+                            println!("websocket disconnected; will attempt to reconnect");
+                            let mut status = CONNECTION_STATUS.write().unwrap();
+                            *status = DeviceStatusDto::Panic;
+                            break; // break event loop to reconnect
+                        }
                     }
                 }
             }
+            Err(e) => match e {
+                Error::ConnectError(err) => {
+                    println!("connect error: {err}");
+                }
+                Error::EmitError(err) => {
+                    println!("emit error during connect: {err}");
+                }
+            },
         }
+
+        println!("reconnecting in {backoff_secs}s...");
+        sleep(Duration::from_secs(backoff_secs));
+        backoff_secs = (backoff_secs.saturating_mul(2)).min(max_backoff_secs);
     }
-    Ok(())
 }

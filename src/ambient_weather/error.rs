@@ -3,6 +3,7 @@ pub(crate) type Result<T> = core::result::Result<T, Error>;
 #[derive(Debug)]
 pub(crate) enum Error {
     EmitError(String),
+    ConnectError(String),
 }
 
 // region:    --- Error Boilerplate

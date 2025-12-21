@@ -21,6 +21,7 @@ pub enum RealtimeEvent {
     Subscribed(SubscribedEventBody),
     Data(DeviceDataPoint),
     Connected,
+    Disconnected,
 }
 
 pub struct RealtimeClient {}
@@ -109,8 +110,20 @@ impl RealtimeClient {
                     let _ = tx_connected.send(RealtimeEvent::Connected);
                 }
             })
+            .on("close", {
+                let tx_close = tx.clone();
+                move |_, _| {
+                    let _ = tx_close.send(RealtimeEvent::Disconnected);
+                }
+            })
+            .on("error", {
+                let tx_error = tx.clone();
+                move |_, _| {
+                    let _ = tx_error.send(RealtimeEvent::Disconnected);
+                }
+            })
             .connect()
-            .unwrap(); // .map_err(|e| Error::ConnectError(e.to_string()))?;
+            .map_err(|e| Error::ConnectError(e.to_string()))?;
 
         Ok((client, rx))
     }

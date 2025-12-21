@@ -1,6 +1,14 @@
 use serde::{Deserialize, Deserializer};
 use uom::si::{
-    angle::degree, f64::ThermodynamicTemperature, f64::{Angle, HeatFluxDensity, Length, Pressure, Ratio, Velocity}, heat_flux_density::watt_per_square_meter, length::inch, pressure::inch_of_mercury, ratio::percent, thermodynamic_temperature::{degree_celsius, degree_fahrenheit, degree_rankine, kelvin}, velocity::mile_per_hour
+    angle::degree,
+    f64::ThermodynamicTemperature,
+    f64::{Angle, HeatFluxDensity, Length, Pressure, Ratio, Velocity},
+    heat_flux_density::watt_per_square_meter,
+    length::inch,
+    pressure::inch_of_mercury,
+    ratio::percent,
+    thermodynamic_temperature::{degree_celsius, degree_fahrenheit, degree_rankine, kelvin},
+    velocity::mile_per_hour,
 };
 
 pub(crate) fn de_pressure_inhg<'de, D>(deserializer: D) -> Result<Option<Pressure>, D::Error>
@@ -20,7 +28,10 @@ where
 {
     let value = Option::<f64>::deserialize(deserializer)?;
     println!("Temp interval in raw: {:?}", value);
-    println!("Temp interval in fahrenheit: {:?}", ThermodynamicTemperature::new::<degree_fahrenheit>(value.unwrap()));
+    println!(
+        "Temp interval in fahrenheit: {:?}",
+        ThermodynamicTemperature::new::<degree_fahrenheit>(value.unwrap())
+    );
     Ok(value.map(ThermodynamicTemperature::new::<degree_fahrenheit>))
 }
 

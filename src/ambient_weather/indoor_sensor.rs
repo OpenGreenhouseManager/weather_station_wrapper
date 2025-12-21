@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use crate::ambient_weather::deser_unit_helper::{de_ratio, de_thermodynamic_temperature_fahrenheit};
+use crate::ambient_weather::deser_unit_helper::{
+    de_ratio, de_thermodynamic_temperature_fahrenheit,
+};
 use greenhouse_core::smart_device_dto::Type;
 use serde::Deserialize;
 use uom::si::{

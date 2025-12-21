@@ -1,33 +1,33 @@
 use std::collections::HashMap;
 
-use crate::ambient_weather::deser_unit_helper::{de_ratio, de_temperature_interval_fahrenheit};
+use crate::ambient_weather::deser_unit_helper::{de_ratio, de_thermodynamic_temperature_fahrenheit};
 use greenhouse_core::smart_device_dto::Type;
 use serde::Deserialize;
 use uom::si::{
-    f64::{Ratio, TemperatureInterval},
+    f64::{Ratio, ThermodynamicTemperature},
     ratio::percent,
-    temperature_interval::degree_celsius,
+    thermodynamic_temperature::degree_celsius,
 };
 
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct IndoorSensor {
     #[serde(
         rename = "tempinf",
-        deserialize_with = "de_temperature_interval_fahrenheit"
+        deserialize_with = "de_thermodynamic_temperature_fahrenheit"
     )]
-    pub temp: Option<TemperatureInterval>,
+    pub temp: Option<ThermodynamicTemperature>,
     #[serde(rename = "humidityin", deserialize_with = "de_ratio")]
     pub humidity: Option<Ratio>,
     #[serde(
         rename = "dewPointin",
-        deserialize_with = "de_temperature_interval_fahrenheit"
+        deserialize_with = "de_thermodynamic_temperature_fahrenheit"
     )]
-    pub dew_point: Option<TemperatureInterval>,
+    pub dew_point: Option<ThermodynamicTemperature>,
     #[serde(
         rename = "feelsLikein",
-        deserialize_with = "de_temperature_interval_fahrenheit"
+        deserialize_with = "de_thermodynamic_temperature_fahrenheit"
     )]
-    pub feels_like: Option<TemperatureInterval>,
+    pub feels_like: Option<ThermodynamicTemperature>,
 }
 
 impl From<&IndoorSensor> for Type {

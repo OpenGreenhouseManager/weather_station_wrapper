@@ -170,11 +170,11 @@ fn init_api_scrape(base_url: String, application_key: String, api_key: String) -
             }
             RealtimeEvent::Data(dp) => {
                 //println!("Data: {:?}", dp);
-                println!("data received {:?}", dp);
+                println!("data received {dp:?}");
                 let mut new_data = NEWEST_DATA_MUTEX.write().unwrap();
                 *new_data = Some(dp);
 
-                println!("new data: {:?}", new_data);
+                println!("new data: {new_data:?}");
             }
             RealtimeEvent::Connected => {
                 match RealtimeClient::subscribe(&socket, std::slice::from_ref(&api_key)) {

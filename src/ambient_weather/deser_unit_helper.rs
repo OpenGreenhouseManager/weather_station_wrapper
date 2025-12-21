@@ -1,13 +1,6 @@
 use serde::{Deserialize, Deserializer};
 use uom::si::{
-    angle::degree,
-    f64::{Angle, HeatFluxDensity, Length, Pressure, Ratio, TemperatureInterval, Velocity},
-    heat_flux_density::watt_per_square_meter,
-    length::inch,
-    pressure::inch_of_mercury,
-    ratio::percent,
-    temperature_interval::degree_fahrenheit,
-    velocity::mile_per_hour,
+    angle::degree, f64::ThermodynamicTemperature, f64::{Angle, HeatFluxDensity, Length, Pressure, Ratio, Velocity}, heat_flux_density::watt_per_square_meter, length::inch, pressure::inch_of_mercury, ratio::percent, thermodynamic_temperature::{degree_celsius, degree_fahrenheit, degree_rankine, kelvin}, velocity::mile_per_hour
 };
 
 pub(crate) fn de_pressure_inhg<'de, D>(deserializer: D) -> Result<Option<Pressure>, D::Error>
@@ -16,18 +9,19 @@ where
 {
     let value = Option::<f64>::deserialize(deserializer)?;
 
-    Ok(value.map(|inhg| Pressure::new::<inch_of_mercury>(inhg)))
+    Ok(value.map(Pressure::new::<inch_of_mercury>))
 }
 
-pub(crate) fn de_temperature_interval_fahrenheit<'de, D>(
+pub(crate) fn de_thermodynamic_temperature_fahrenheit<'de, D>(
     deserializer: D,
-) -> Result<Option<TemperatureInterval>, D::Error>
+) -> Result<Option<ThermodynamicTemperature>, D::Error>
 where
     D: Deserializer<'de>,
 {
     let value = Option::<f64>::deserialize(deserializer)?;
-
-    Ok(value.map(|fahrenheit| TemperatureInterval::new::<degree_fahrenheit>(fahrenheit)))
+    println!("Temp interval in raw: {:?}", value);
+    println!("Temp interval in fahrenheit: {:?}", ThermodynamicTemperature::new::<degree_fahrenheit>(value.unwrap()));
+    Ok(value.map(ThermodynamicTemperature::new::<degree_fahrenheit>))
 }
 
 pub(crate) fn de_ratio<'de, D>(deserializer: D) -> Result<Option<Ratio>, D::Error>
@@ -36,7 +30,7 @@ where
 {
     let value = Option::<f64>::deserialize(deserializer)?;
 
-    Ok(value.map(|ratio| Ratio::new::<percent>(ratio)))
+    Ok(value.map(Ratio::new::<percent>))
 }
 
 pub(crate) fn de_length_inch<'de, D>(deserializer: D) -> Result<Option<Length>, D::Error>
@@ -45,7 +39,7 @@ where
 {
     let value = Option::<f64>::deserialize(deserializer)?;
 
-    Ok(value.map(|length| Length::new::<inch>(length)))
+    Ok(value.map(Length::new::<inch>))
 }
 
 pub(crate) fn de_angle_degree<'de, D>(deserializer: D) -> Result<Option<Angle>, D::Error>
@@ -54,7 +48,7 @@ where
 {
     let value = Option::<f64>::deserialize(deserializer)?;
 
-    Ok(value.map(|angle| Angle::new::<degree>(angle)))
+    Ok(value.map(Angle::new::<degree>))
 }
 
 pub(crate) fn de_velocity_mph<'de, D>(deserializer: D) -> Result<Option<Velocity>, D::Error>
@@ -63,7 +57,7 @@ where
 {
     let value = Option::<f64>::deserialize(deserializer)?;
 
-    Ok(value.map(|velocity| Velocity::new::<mile_per_hour>(velocity)))
+    Ok(value.map(Velocity::new::<mile_per_hour>))
 }
 
 pub(crate) fn de_power_watt<'de, D>(deserializer: D) -> Result<Option<HeatFluxDensity>, D::Error>
@@ -72,6 +66,5 @@ where
 {
     let value = Option::<f64>::deserialize(deserializer)?;
 
-    Ok(value
-        .map(|heat_flux_density| HeatFluxDensity::new::<watt_per_square_meter>(heat_flux_density)))
+    Ok(value.map(HeatFluxDensity::new::<watt_per_square_meter>))
 }

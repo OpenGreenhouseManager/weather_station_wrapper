@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use chrono::{DateTime, Utc};
 use greenhouse_core::smart_device_dto::Type;
 use serde::{Deserialize, Serialize};
 
@@ -9,18 +8,6 @@ use crate::ambient_weather::{
     outdoor_sensor::OutdoorSensor, probe_sensor::ProbeSensor, rain_sensor::RainSensor,
     solar_sensor::SolarSensor, wind_sensor::WindSensor,
 };
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Device {
-    pub mac_address: String,
-    #[serde(default)]
-    pub info: Option<DeviceInfo>,
-    #[serde(default)]
-    pub last_data: Option<DeviceDataPoint>,
-    #[serde(default)]
-    pub api_key: Option<String>,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -62,11 +49,6 @@ pub struct Geo {
 #[derive(Debug, Clone, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct DeviceDataPoint {
-    pub mac_address: Option<String>,
-    pub dateutc: Option<i64>,
-    pub date: Option<DateTime<Utc>>,
-    pub tz: Option<String>,
-
     #[serde(flatten)]
     pub indoor_station: IndoorSensor,
     #[serde(flatten)]

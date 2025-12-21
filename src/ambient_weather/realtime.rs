@@ -1,5 +1,5 @@
 use super::error::{Error, Result};
-use super::types::{Device, DeviceDataPoint};
+use super::types::DeviceDataPoint;
 use rust_socketio::client::Client;
 use rust_socketio::{ClientBuilder, Payload, TransportType};
 use serde::Deserialize;
@@ -10,12 +10,12 @@ use std::sync::mpsc::{self, Receiver};
 #[serde(rename_all = "camelCase")]
 pub struct SubscribedEventBody {
     #[serde(default)]
-    pub devices: Vec<Device>,
+    pub device_count: usize,
     #[serde(default)]
     pub invalid_api_keys: Vec<String>,
 }
 
-#[warn(clippy::large_enum_variant)]
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone)]
 pub enum RealtimeEvent {
     Subscribed(SubscribedEventBody),

@@ -161,8 +161,7 @@ fn init_api_scrape(base_url: String, application_key: String, api_key: String) -
             RealtimeEvent::Subscribed(body) => {
                 println!(
                     "Subscribed: {} devices, invalid: {:?}",
-                    body.devices.len(),
-                    body.invalid_api_keys
+                    body.device_count, body.invalid_api_keys
                 );
             }
             RealtimeEvent::Data(dp) => {

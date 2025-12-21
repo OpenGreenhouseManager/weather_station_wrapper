@@ -1,9 +1,16 @@
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+use chrono::{DateTime, Utc};
+use greenhouse_core::smart_device_dto::Type;
+use serde::{Deserialize, Serialize};
+
+use crate::ambient_weather::{
+    barometric_sensor::BarometricSensor, indoor_sensor::IndoorSensor,
+    outdoor_sensor::OutdoorSensor, probe_sensor::ProbeSensor, rain_sensor::RainSensor,
+    solar_sensor::SolarSensor, wind_sensor::WindSensor,
+};
+
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Device {
     pub mac_address: String,
@@ -52,17 +59,49 @@ pub struct Geo {
     pub coordinates: [f64; 2],
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct DeviceDataPoint {
-    #[serde(default)]
+pub(crate) struct DeviceDataPoint {
     pub mac_address: Option<String>,
-    #[serde(default)]
     pub dateutc: Option<i64>,
-    #[serde(default)]
     pub date: Option<DateTime<Utc>>,
-    #[serde(default)]
     pub tz: Option<String>,
+
     #[serde(flatten)]
-    pub extra: HashMap<String, Value>,
+    pub indoor_station: IndoorSensor,
+    #[serde(flatten)]
+    pub outdoor_station: OutdoorSensor,
+    #[serde(flatten)]
+    pub generic_sensor1: ProbeSensor,
+    #[serde(flatten)]
+    pub rain_sensor: RainSensor,
+    #[serde(flatten)]
+    pub wind_sensor: WindSensor,
+    #[serde(flatten)]
+    pub barometric_sensor: BarometricSensor,
+    #[serde(flatten)]
+    pub solar_sensor: SolarSensor,
+}
+
+impl From<&DeviceDataPoint> for Type {
+    fn from(data: &DeviceDataPoint) -> Self {
+        Type::Object(HashMap::from([
+            (String::from("indoorStation"), (&data.indoor_station).into()),
+            (
+                String::from("outdoorStation"),
+                (&data.outdoor_station).into(),
+            ),
+            (
+                String::from("genericSensor1"),
+                (&data.generic_sensor1).into(),
+            ),
+            (String::from("rainSensor"), (&data.rain_sensor).into()),
+            (String::from("windSensor"), (&data.wind_sensor).into()),
+            (
+                String::from("barometricSensor"),
+                (&data.barometric_sensor).into(),
+            ),
+            (String::from("solarSensor"), (&data.solar_sensor).into()),
+        ]))
+    }
 }

@@ -3,7 +3,7 @@ version: "3.9"
 services:
   weather-station-wrapper:
     # Use the published image; or uncomment build to build locally
-    image: ghcr.io/OWNER/weather_station_wrapper:latest
+    image: ghcr.io/opengreenhousemanager/weather_station_wrapper:latest
     # build:
     #   context: .
     #   dockerfile: Dockerfile

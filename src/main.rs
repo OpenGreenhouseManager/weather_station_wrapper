@@ -87,7 +87,7 @@ async fn main() {
     let base_url = config.additional_config.base_url;
     let application_key = config.additional_config.application_key;
     let api_key = config.additional_config.api_key;
-    
+
     thread::spawn(move || {
         if let Err(e) = init_api_scrape(base_url, application_key, api_key) {
             match e {
@@ -119,18 +119,10 @@ async fn main() {
 }
 
 async fn read_handler(_: Arc<Config<WeatherStationConfig>>) -> Type {
-    let map = NEWEST_DATA_MUTEX.read().unwrap();
+    let map: std::sync::RwLockReadGuard<'_, Option<DeviceDataPoint>> =
+        NEWEST_DATA_MUTEX.read().unwrap();
     if let Some(data) = map.as_ref() {
-        return Type::Object(
-            data.extra
-                .iter()
-                .map(|(k, v)| match v {
-                    serde_json::Value::Number(n) => (k.clone(), Type::Number(n.as_f64().unwrap())),
-                    serde_json::Value::Bool(b) => (k.clone(), Type::Boolean(*b)),
-                    _ => (k.clone(), Type::None),
-                })
-                .collect(),
-        );
+        return data.into();
     }
     Type::Object(HashMap::new())
 }
@@ -164,8 +156,7 @@ async fn config_interceptor_handler(
 }
 
 fn init_api_scrape(base_url: String, application_key: String, api_key: String) -> Result<()> {
-    let (socket, rx) =
-        RealtimeClient::connect_with_base(&base_url, &application_key)?;
+    let (socket, rx) = RealtimeClient::connect_with_base(&base_url, &application_key)?;
     sleep(Duration::from_secs(3));
 
     for event in rx {
@@ -179,9 +170,11 @@ fn init_api_scrape(base_url: String, application_key: String, api_key: String) -
             }
             RealtimeEvent::Data(dp) => {
                 //println!("Data: {:?}", dp);
-                println!("data received");
+                println!("data received {:?}", dp);
                 let mut new_data = NEWEST_DATA_MUTEX.write().unwrap();
                 *new_data = Some(dp);
+
+                println!("new data: {:?}", new_data);
             }
             RealtimeEvent::Connected => {
                 match RealtimeClient::subscribe(&socket, std::slice::from_ref(&api_key)) {

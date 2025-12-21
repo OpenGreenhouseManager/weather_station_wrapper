@@ -1,0 +1,1 @@
+{"mode":"InputOutput","port":6001,"datasource_id":"7a224a14-6e07-45a3-91da-b7584a5731c1","input_type":"Number","output_type":"Number","additional_config":{"base_url":"http://localhost:8080/","application_key":"","api_key":""},"scripting_api":null}

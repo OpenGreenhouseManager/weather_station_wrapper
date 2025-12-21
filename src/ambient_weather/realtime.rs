@@ -1,12 +1,12 @@
 use super::error::{Error, Result};
 use super::types::{Device, DeviceDataPoint};
 use rust_socketio::client::Client;
-use rust_socketio::{ClientBuilder, Payload};
-use serde::{Deserialize, Serialize};
+use rust_socketio::{ClientBuilder, Payload, TransportType};
+use serde::Deserialize;
 use serde_json::json;
 use std::sync::mpsc::{self, Receiver};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SubscribedEventBody {
     #[serde(default)]
@@ -43,8 +43,9 @@ impl RealtimeClient {
         let tx_sub = tx.clone();
         let tx_connected = tx.clone();
         let tx_data = tx.clone();
-
+        println!("url: {url}");
         let client = ClientBuilder::new(url)
+            .transport_type(TransportType::Websocket)
             .on("subscribed", {
                 move |payload, _| {
                     match payload {
@@ -110,7 +111,7 @@ impl RealtimeClient {
                 }
             })
             .connect()
-            .map_err(|e| Error::ConnectError(e.to_string()))?;
+            .unwrap(); // .map_err(|e| Error::ConnectError(e.to_string()))?;
 
         Ok((client, rx))
     }

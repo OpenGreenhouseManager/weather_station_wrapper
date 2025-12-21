@@ -7,7 +7,7 @@ use uom::si::{
     length::inch,
     pressure::inch_of_mercury,
     ratio::percent,
-    thermodynamic_temperature::{degree_celsius, degree_fahrenheit, degree_rankine, kelvin},
+    thermodynamic_temperature::degree_fahrenheit,
     velocity::mile_per_hour,
 };
 
@@ -27,7 +27,7 @@ where
     D: Deserializer<'de>,
 {
     let value = Option::<f64>::deserialize(deserializer)?;
-    println!("Temp interval in raw: {:?}", value);
+    println!("Temp interval in raw: {value:?}");
     println!(
         "Temp interval in fahrenheit: {:?}",
         ThermodynamicTemperature::new::<degree_fahrenheit>(value.unwrap())

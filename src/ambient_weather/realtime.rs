@@ -6,6 +6,7 @@ use serde::Deserialize;
 use serde_json::json;
 use std::sync::mpsc::{self, Receiver};
 
+#[warn(clippy::large_enum_variant)]
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SubscribedEventBody {

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::ambient_weather::deser_unit_helper::{
     de_ratio, de_thermodynamic_temperature_fahrenheit,
 };
-use greenhouse_core::smart_device_dto::Type;
+use greenhouse_core::smart_device_dto::{Measurement, Type};
 use serde::Deserialize;
 use uom::si::{
     f64::{Ratio, ThermodynamicTemperature},
@@ -43,31 +43,46 @@ impl From<&OutdoorSensor> for Type {
         if let Some(temp) = data.temp {
             map.insert(
                 String::from("temp"),
-                Type::Number(temp.get::<degree_celsius>()),
+                Type::Measurement(Measurement {
+                    value: temp.get::<degree_celsius>(),
+                    unit: "°C".to_string(),
+                }),
             );
         }
         if let Some(humidity) = data.humidity {
             map.insert(
                 String::from("humidity"),
-                Type::Number(humidity.get::<percent>()),
+                Type::Measurement(Measurement {
+                    value: humidity.get::<percent>(),
+                    unit: "%".to_string(),
+                }),
             );
         }
         if let Some(dew_point) = data.dew_point {
             map.insert(
                 String::from("dewPoint"),
-                Type::Number(dew_point.get::<degree_celsius>()),
+                Type::Measurement(Measurement {
+                    value: dew_point.get::<degree_celsius>(),
+                    unit: "°C".to_string(),
+                }),
             );
         }
         if let Some(feels_like) = data.feels_like {
             map.insert(
                 String::from("feelsLike"),
-                Type::Number(feels_like.get::<degree_celsius>()),
+                Type::Measurement(Measurement {
+                    value: feels_like.get::<degree_celsius>(),
+                    unit: "°C".to_string(),
+                }),
             );
         }
         if let Some(battery) = data.battery {
             map.insert(
                 String::from("battery"),
-                Type::Number(battery.get::<percent>()),
+                Type::Measurement(Measurement {
+                    value: battery.get::<percent>(),
+                    unit: "%".to_string(),
+                }),
             );
         }
         Type::Object(map)

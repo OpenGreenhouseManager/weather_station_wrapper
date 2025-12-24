@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::ambient_weather::deser_unit_helper::{de_angle_degree, de_velocity_mph};
-use greenhouse_core::smart_device_dto::Type;
+use greenhouse_core::smart_device_dto::{Measurement, Type};
 use serde::Deserialize;
 use uom::si::{
     angle::degree,
@@ -27,25 +27,37 @@ impl From<&WindSensor> for Type {
         if let Some(wind_direction) = data.wind_direction {
             map.insert(
                 String::from("windDirection"),
-                Type::Number(wind_direction.get::<degree>()),
+                Type::Measurement(Measurement {
+                    value: wind_direction.get::<degree>(),
+                    unit: "°".to_string(),
+                }),
             );
         }
         if let Some(wind_speed_daily_max) = data.wind_speed_daily_max {
             map.insert(
                 String::from("windSpeedDailyMax"),
-                Type::Number(wind_speed_daily_max.get::<meter_per_second>()),
+                Type::Measurement(Measurement {
+                    value: wind_speed_daily_max.get::<meter_per_second>(),
+                    unit: "m/s".to_string(),
+                }),
             );
         }
         if let Some(wind_speed_10m_max) = data.wind_speed_10m_max {
             map.insert(
                 String::from("windSpeed10mMax"),
-                Type::Number(wind_speed_10m_max.get::<meter_per_second>()),
+                Type::Measurement(Measurement {
+                    value: wind_speed_10m_max.get::<meter_per_second>(),
+                    unit: "m/s".to_string(),
+                }),
             );
         }
         if let Some(wind_speed_mph) = data.wind_speed_mph {
             map.insert(
                 String::from("windSpeedMph"),
-                Type::Number(wind_speed_mph.get::<meter_per_second>()),
+                Type::Measurement(Measurement {
+                    value: wind_speed_mph.get::<meter_per_second>(),
+                    unit: "m/s".to_string(),
+                }),
             );
         }
         Type::Object(map)

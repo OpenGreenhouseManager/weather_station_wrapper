@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::ambient_weather::deser_unit_helper::de_pressure_inhg;
-use greenhouse_core::smart_device_dto::Type;
+use greenhouse_core::smart_device_dto::{Measurement, Type};
 use serde::Deserialize;
 use uom::si::{f64::Pressure, pressure::hectopascal};
 
@@ -19,13 +19,19 @@ impl From<&BarometricSensor> for Type {
         if let Some(relative_pressure) = data.relative_pressure {
             map.insert(
                 String::from("relativePressure"),
-                Type::Number(relative_pressure.get::<hectopascal>()),
+                Type::Measurement(Measurement {
+                    value: relative_pressure.get::<hectopascal>(),
+                    unit: "hPa".to_string(),
+                }),
             );
         }
         if let Some(absolute_pressure) = data.absolute_pressure {
             map.insert(
                 String::from("absolutePressure"),
-                Type::Number(absolute_pressure.get::<hectopascal>()),
+                Type::Measurement(Measurement {
+                    value: absolute_pressure.get::<hectopascal>(),
+                    unit: "hPa".to_string(),
+                }),
             );
         }
         Type::Object(map)

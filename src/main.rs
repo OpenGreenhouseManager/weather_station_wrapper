@@ -24,9 +24,7 @@ use greenhouse_core::{
         status::{DeviceStatusDto, DeviceStatusResponseDto},
     },
     smart_device_interface::{
-        config::{
-            Config, read_config_file_with_path, update_config_file_with_path,
-        },
+        config::{Config, read_config_file_with_path, update_config_file_with_path},
         device_builder::DeviceBuilder,
         hybrid_device::init_hybrid_router,
     },
@@ -103,7 +101,7 @@ async fn main() {
         status_handler,
         config_interceptor_handler,
         &config_path,
-        TypeOption::Object
+        TypeOption::Object,
     )
     .unwrap();
     let router = init_hybrid_router(device_service);

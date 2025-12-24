@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::ambient_weather::deser_unit_helper::de_power_watt;
-use greenhouse_core::smart_device_dto::Type;
+use greenhouse_core::smart_device_dto::{Measurement, Type};
 use serde::Deserialize;
 use uom::si::{f64::HeatFluxDensity, heat_flux_density::watt_per_square_meter};
 
@@ -22,7 +22,10 @@ impl From<&SolarSensor> for Type {
         if let Some(solar_radiation) = data.solar_radiation {
             map.insert(
                 String::from("solarRadiation"),
-                Type::Number(solar_radiation.get::<watt_per_square_meter>()),
+                Type::Measurement(Measurement {
+                    value: solar_radiation.get::<watt_per_square_meter>(),
+                    unit: "W/m²".to_string(),
+                }),
             );
         }
 

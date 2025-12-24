@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 axum = { version = "0.8.6", features = ["macros"] }
 chrono = { version = "0.4.42", features = ["serde"] }
-greenhouse_core = "0.1.0"
+greenhouse_core = "0.2.0"
 reqwest = { version = "0.12.24", features = ["json"] }
 rust_socketio = "0.6.0"
 serde = "1.0.228"

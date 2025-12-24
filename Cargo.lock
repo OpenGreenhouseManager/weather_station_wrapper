@@ -496,9 +496,9 @@ dependencies = [
 
 [[package]]
 name = "greenhouse_core"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2b0aa4901995bfabb4ba16e557082730eb23b0f9828571f67414fd1e508d01b"
+checksum = "0c3f8b38c0ceb919ce1614a303157eebde1a3f3088b81a8a7719938ca285a26b"
 dependencies = [
  "axum",
  "chrono",

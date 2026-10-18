@@ -80,3 +80,28 @@ To release:
 - Compose file sets `read_only: true` and `no-new-privileges`.
 
 
+
+### NixOS
+
+The flake provides `packages.{x86_64,aarch64}-linux.default`, a dev shell (`direnv allow` / `nix develop`), and a NixOS module.
+
+```nix
+# flake.nix of your host
+inputs.weather-station-wrapper.url = "github:OpenGreenhouseManager/weather_station_wrapper";
+
+# configuration.nix
+{ inputs, ... }: {
+  imports = [ inputs.weather-station-wrapper.nixosModules.default ];
+
+  services.weather-station-wrapper = {
+    enable = true;
+    apiKeyFile = "/run/secrets/ambient-api-key";         # e.g. agenix / sops-nix
+    applicationKeyFile = "/run/secrets/ambient-app-key";
+    # port = 6001; openFirewall = true; datasourceId = "..."; baseUrl = "...";
+  };
+}
+```
+
+The service writes its config at runtime (`POST /config`, `POST /activate`), so it lives in `/var/lib/weather-station-wrapper/config.json`. On every start the Nix options (port, datasource id, base URL, keys) are merged over that file. Runtime-only fields such as `scripting_api` persist, but `additional_config` changes made via `POST /config` are reset to the Nix values on restart.
+
+Secrets are passed in via systemd `LoadCredential`, so root-owned `0400` secret files work with the service's dynamic user.

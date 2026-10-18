@@ -1,10 +1,13 @@
 use super::error::{Error, Result};
 use super::types::DeviceDataPoint;
-use rust_socketio::client::Client;
-use rust_socketio::{ClientBuilder, Payload, TransportType};
+use futures_util::FutureExt;
+use futures_util::future::BoxFuture;
+use rust_socketio::asynchronous::{Client, ClientBuilder};
+use rust_socketio::{Payload, TransportType};
 use serde::Deserialize;
+use serde::de::DeserializeOwned;
 use serde_json::json;
-use std::sync::mpsc::{self, Receiver};
+use tokio::sync::mpsc::{self, UnboundedReceiver};
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -27,120 +30,104 @@ pub enum RealtimeEvent {
 pub struct RealtimeClient {}
 
 impl RealtimeClient {
-    pub fn connect_with_base(
+    pub async fn connect_with_base(
         base_url: &str,
         application_key: &str,
-    ) -> Result<(Client, Receiver<RealtimeEvent>)> {
+    ) -> Result<(Client, UnboundedReceiver<RealtimeEvent>)> {
         let url = format!(
             "{}?api=1&applicationKey={}",
             base_url.trim_end_matches('/'),
             application_key
         );
 
-        let (tx, rx) = mpsc::channel();
+        let (tx, rx) = mpsc::unbounded_channel();
 
         // Clone the sender for each handler closure
         let tx_sub = tx.clone();
         let tx_connected = tx.clone();
         let tx_data = tx.clone();
+        let tx_close = tx.clone();
+        let tx_error = tx;
         println!("url: {url}");
         let client = ClientBuilder::new(url)
             .transport_type(TransportType::Websocket)
-            .on("subscribed", {
-                move |payload, _| {
-                    match payload {
-                        Payload::Text(values) => {
-                            if let Some(first) = values.into_iter().next() {
-                                match serde_json::from_value::<SubscribedEventBody>(first) {
-                                    Ok(body) => {
-                                        let _ = tx_sub.send(RealtimeEvent::Subscribed(body));
-                                    }
-                                    Err(err) => {
-                                        eprintln!("failed to deserialize subscribed body: {err}");
-                                    }
-                                }
-                            } else {
-                                eprintln!("subscribed event had no arguments");
-                            }
-                        }
-                        Payload::Binary(_) => {
-                            eprintln!("unexpected binary payload for 'subscribed' event");
-                        }
-                        #[allow(deprecated)]
-                        Payload::String(s) => {
-                            // Back-compat: parse legacy string payload
-                            match serde_json::from_str::<SubscribedEventBody>(&s) {
-                                Ok(body) => {
-                                    let _ = tx_sub.send(RealtimeEvent::Subscribed(body));
-                                }
-                                Err(err) => eprintln!("failed to parse subscribed string: {err}"),
-                            }
-                        }
-                    }
+            // Reconnects are handled by the caller's backoff loop, so the
+            // library must not keep its own reconnect task running.
+            .reconnect(false)
+            .on("subscribed", move |payload, _| {
+                if let Some(body) = parse_payload::<SubscribedEventBody>(payload, "subscribed") {
+                    let _ = tx_sub.send(RealtimeEvent::Subscribed(body));
                 }
+                done()
             })
-            .on("data", {
-                move |payload, _| match payload {
-                    Payload::Text(values) => {
-                        if let Some(first) = values.into_iter().next() {
-                            match serde_json::from_value::<DeviceDataPoint>(first) {
-                                Ok(data) => {
-                                    let _ = tx_data.send(RealtimeEvent::Data(data));
-                                }
-                                Err(err) => eprintln!("failed to deserialize data body: {err}"),
-                            }
-                        } else {
-                            eprintln!("data event had no arguments");
-                        }
-                    }
-                    Payload::Binary(_) => {
-                        eprintln!("unexpected binary payload for 'data' event");
-                    }
-                    #[allow(deprecated)]
-                    Payload::String(s) => match serde_json::from_str::<DeviceDataPoint>(&s) {
-                        Ok(data) => {
-                            let _ = tx_data.send(RealtimeEvent::Data(data));
-                        }
-                        Err(err) => eprintln!("failed to parse data string: {err}"),
-                    },
+            .on("data", move |payload, _| {
+                if let Some(data) = parse_payload::<DeviceDataPoint>(payload, "data") {
+                    let _ = tx_data.send(RealtimeEvent::Data(data));
                 }
+                done()
             })
-            .on("open", {
-                move |_, _| {
-                    let _ = tx_connected.send(RealtimeEvent::Connected);
-                }
+            .on("open", move |_, _| {
+                let _ = tx_connected.send(RealtimeEvent::Connected);
+                done()
             })
-            .on("close", {
-                let tx_close = tx.clone();
-                move |_, _| {
-                    let _ = tx_close.send(RealtimeEvent::Disconnected);
-                }
+            .on("close", move |_, _| {
+                let _ = tx_close.send(RealtimeEvent::Disconnected);
+                done()
             })
-            .on("error", {
-                let tx_error = tx.clone();
-                move |_, _| {
-                    let _ = tx_error.send(RealtimeEvent::Disconnected);
-                }
+            .on("error", move |payload, _| {
+                eprintln!("socket error: {payload:?}");
+                let _ = tx_error.send(RealtimeEvent::Disconnected);
+                done()
             })
             .connect()
+            .await
             .map_err(|e| Error::ConnectError(e.to_string()))?;
 
         Ok((client, rx))
     }
 
-    pub fn subscribe(client: &Client, api_keys: &[String]) -> Result<()> {
+    pub async fn subscribe(client: &Client, api_keys: &[String]) -> Result<()> {
         let body = json!({ "apiKeys": api_keys });
         client
             .emit("subscribe", body)
+            .await
             .map_err(|e| Error::EmitError(e.to_string()))?;
         Ok(())
     }
 
-    // pub fn unsubscribe(client: &Client, api_keys: &[String]) -> Result<()> {
+    // pub async fn unsubscribe(client: &Client, api_keys: &[String]) -> Result<()> {
     //     let body = json!({ "apiKeys": api_keys });
     //     client
     //         .emit("unsubscribe", body)
+    //         .await
     //         .map_err(|e| Error::EmitError(e.to_string()))?;
     //     Ok(())
     // }
+}
+
+fn done() -> BoxFuture<'static, ()> {
+    async {}.boxed()
+}
+
+fn parse_payload<T: DeserializeOwned>(payload: Payload, event: &str) -> Option<T> {
+    match payload {
+        Payload::Text(values) => {
+            let Some(first) = values.into_iter().next() else {
+                eprintln!("{event} event had no arguments");
+                return None;
+            };
+            serde_json::from_value(first)
+                .map_err(|err| eprintln!("failed to deserialize {event} body: {err}"))
+                .ok()
+        }
+        Payload::Binary(_) => {
+            eprintln!("unexpected binary payload for '{event}' event");
+            None
+        }
+        // Back-compat: parse legacy string payload
+        #[allow(deprecated)]
+        Payload::String(s) => serde_json::from_str(&s)
+            .map_err(|err| eprintln!("failed to parse {event} string: {err}"))
+            .ok(),
+    }
 }

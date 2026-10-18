@@ -2,9 +2,9 @@ mod ambient_weather;
 use std::{
     collections::HashMap,
     sync::{LazyLock, RwLock},
-    thread::{self, sleep},
     time::Duration,
 };
+use tokio::time::sleep;
 
 use ambient_weather::error::{Error, Result};
 use ambient_weather::{RealtimeClient, RealtimeEvent};
@@ -83,8 +83,8 @@ async fn main() {
     let application_key = config.additional_config.application_key;
     let api_key = config.additional_config.api_key;
 
-    thread::spawn(move || {
-        if let Err(e) = init_api_scrape(base_url, application_key, api_key) {
+    tokio::spawn(async move {
+        if let Err(e) = init_api_scrape(base_url, application_key, api_key).await {
             match e {
                 Error::EmitError(e) => {
                     println!("error emitting: {e}");
@@ -154,7 +154,7 @@ async fn config_interceptor_handler(
     }
 }
 
-fn init_api_scrape(base_url: String, application_key: String, api_key: String) -> Result<()> {
+async fn init_api_scrape(base_url: String, application_key: String, api_key: String) -> Result<()> {
     // Exponential backoff reconnect loop
     let mut backoff_secs: u64 = 1;
     let max_backoff_secs: u64 = 30;
@@ -164,13 +164,13 @@ fn init_api_scrape(base_url: String, application_key: String, api_key: String) -
             *status = DeviceStatusDto::Panic;
         }
 
-        match RealtimeClient::connect_with_base(&base_url, &application_key) {
-            Ok((socket, rx)) => {
+        match RealtimeClient::connect_with_base(&base_url, &application_key).await {
+            Ok((socket, mut rx)) => {
                 // Connected to transport; wait a bit, then process events
                 backoff_secs = 1;
-                sleep(Duration::from_secs(1));
+                sleep(Duration::from_secs(1)).await;
 
-                for event in rx {
+                while let Some(event) = rx.recv().await {
                     match event {
                         RealtimeEvent::Subscribed(body) => {
                             println!(
@@ -191,6 +191,7 @@ fn init_api_scrape(base_url: String, application_key: String, api_key: String) -
                                 *status = DeviceStatusDto::Online;
                             }
                             match RealtimeClient::subscribe(&socket, std::slice::from_ref(&api_key))
+                                .await
                             {
                                 Ok(_) => {
                                     println!("subscribed");
@@ -208,6 +209,9 @@ fn init_api_scrape(base_url: String, application_key: String, api_key: String) -
                         }
                     }
                 }
+
+                // Tear down the old connection so its background task stops
+                let _ = socket.disconnect().await;
             }
             Err(e) => match e {
                 Error::ConnectError(err) => {
@@ -220,7 +224,7 @@ fn init_api_scrape(base_url: String, application_key: String, api_key: String) -
         }
 
         println!("reconnecting in {backoff_secs}s...");
-        sleep(Duration::from_secs(backoff_secs));
+        sleep(Duration::from_secs(backoff_secs)).await;
         backoff_secs = (backoff_secs.saturating_mul(2)).min(max_backoff_secs);
     }
 }

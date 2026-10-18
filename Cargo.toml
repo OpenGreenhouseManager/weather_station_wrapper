@@ -6,9 +6,10 @@ edition = "2024"
 [dependencies]
 axum = { version = "0.8.6", features = ["macros"] }
 chrono = { version = "0.4.42", features = ["serde"] }
+futures-util = "0.3.31"
 greenhouse_core = "0.2.0"
 reqwest = { version = "0.12.24", features = ["json"] }
-rust_socketio = "0.6.0"
+rust_socketio = { version = "0.6.0", features = ["async"] }
 serde = "1.0.228"
 serde_derive = "1.0.228"
 serde_json = "1.0.145"
